@@ -2,272 +2,188 @@
 
 [English](README.md) | [中文](README.zh-CN.md) | [日本語](README.ja.md)
 
-Quaeligo (derived from Latin *Quaero* [to explore/inquire] + *Colligo* [to collect/assess]) is an open-source, web-based audio evaluation system. It is built for subjective listening experiments and blind evaluation of audio algorithms (such as speech enhancement, noise suppression, or spatial audio). It supports custom questionnaire configurations, multi-dimensional scoring metrics, and one-click data export.
+Quaeligo is an open-source web app for running subjective listening tests. Use it to blind-test audio algorithms such as speech enhancement, noise suppression, or spatial audio. You set up the questionnaires and rating scales, and export the responses when the test is done.
 
-## Key features
+The name combines the Latin *quaero* (to inquire) and *colligo* (to collect).
 
-- **Multi-dimensional audio testing**: Supports blind listening (A/B Test) and audio quality evaluation (MOS/MUSHRA).
-- **Custom metric rendering**: Configure different sliding scoring components (Semantic Diff, basic scoring) for each question.
-- **Multi-language support (i18n)**: The frontend includes built-in localization.
-- **Admin dashboard**: Create questions, upload audio files, modify scales, and export subject data.
+## Features
+
+- A/B blind listening tests and audio quality ratings (MOS, MUSHRA)
+- Per-question rating scales, including basic scores and semantic differential sliders
+- Multiple surveys, each with its own questions, scales, and responses
+- An admin panel for creating questions, uploading audio, editing scales, and exporting responses
+- UI in Chinese, English, and Japanese (i18next)
 
 ## Tech stack
 
-- **Language**: TypeScript (Full-stack)
-- **Frontend**: React 19, Vite, React Router, i18next
-- **Backend**: Express 5, Node.js (tsx)
-- **Database**: SQLite, Prisma ORM
-- **File storage**: Local file system (via multer)
-- **Security & auth**: JWT (JSON Web Tokens), bcryptjs, express-rate-limit
+- TypeScript on both frontend and backend
+- Frontend: React 19, Vite, React Router, i18next
+- Backend: Express 5 on Node.js, run with tsx
+- Database: SQLite with Prisma ORM
+- File uploads: multer, stored on the local disk
+- Auth: JWT, bcryptjs, express-rate-limit
 
-## Prerequisites
+## Requirements
 
-- **Node.js**: Version 20 or higher
-- **npm** (recommended) or yarn
-- *Note: This project uses SQLite, so it runs directly on your local machine without needing an external database service.*
+- Node.js 20 or later
+- npm
 
-## Getting started
+SQLite is file-based, so you don't need a separate database server.
 
-### ⚡ Quick start (one-click)
+## Quick start
 
-We've added root directory scripts so you don't need to manually navigate into the frontend and backend folders. Run these commands from the **project root**:
+Run these from the project root:
 
 ```bash
-# 1. Clone the repository
 git clone <your-repository-url>
 cd quaeligo
 
-# 2. Install dependencies for both frontend and backend
+# Install root, backend, and frontend dependencies
+npm install
 npm run install:all
 
-# 3. Environment variables & database initialization (first time only)
+# First run only: create .env, the database, and the default admin
 cd backend
 cp .env.example .env
 npx prisma db push
-npm run prisma:seed   # Creates default admin (admin / admin123)
+npx prisma db seed   # creates admin / admin123
 cd ..
 
-# 4. Start frontend and backend development servers together
+# Start backend and frontend together
 npm run dev
 ```
-The backend API will run at `http://localhost:3000`, and the frontend application at `http://localhost:5173`.
 
----
+The backend listens on `http://localhost:3000`. Open the app at `http://localhost:5173`. The Vite dev server proxies `/api` and `/uploads` to the backend.
 
-### Step-by-step manual setup
+## Manual setup
 
-#### Backend setup
+### Backend
 
 ```bash
 cd backend
 npm install
-```
-
-**Environment variables**:
-Copy the example file to `.env`:
-```bash
 cp .env.example .env
-```
-Update `.env` if needed (the default `JWT_SECRET` and port work fine for local development):
-
-| Variable | Description | Example |
-|---|---|---|
-| `PORT` | Backend service listening port | `3000` |
-| `JWT_SECRET` | JWT encryption key | `your_jwt_secret_key_here` |
-| `DATABASE_URL` | SQLite database connection string | `file:./audiosurvey.db?connection_limit=1&busy_timeout=5000` |
-| `CORS_ORIGIN` | Allowed cross-origin domains (comma-separated) | `http://localhost:5173,https://survey.example.com` |
-
-> **CORS Configuration Guide (`CORS_ORIGIN`)**:
-> - **Local Development**: If unspecified, defaults to `http://localhost:5173,http://localhost:3000`.
-> - **Production Deployment**: Set comma-separated allowed origins (e.g., `https://survey.yourdomain.com`).
-> - **Nginx Reverse Proxy**: When using the included `docker-compose.yml`, frontend and backend are served behind the same Nginx port, ensuring same-origin communication.
-
-**Database initialization**:
-```bash
-# Sync Prisma schema
 npx prisma db push
-```
-
-**Start the development server**:
-```bash
+npx prisma db seed
 npm run dev
 ```
 
-#### Frontend setup
+The defaults in `.env.example` are fine for local development.
 
-Open a new terminal window:
+| Variable | Description | Default in `.env.example` |
+|---|---|---|
+| `PORT` | Port the backend listens on | `3000` |
+| `JWT_SECRET` | Secret used to sign admin login tokens | `your_jwt_secret_here` |
+| `DATABASE_URL` | SQLite connection string, relative to `backend/prisma/` | `file:./quaeligo.db?connection_limit=1&busy_timeout=5000` |
+| `CORS_ORIGIN` | Allowed origins, comma-separated | `http://localhost:5173,http://localhost:3000` |
+
+If `CORS_ORIGIN` is not set during development, the backend allows `http://localhost:5173` and `http://localhost:3000`. With Docker Compose, Nginx serves the frontend and backend from the same origin, so you usually don't need to set it.
+
+### Frontend
+
+In another terminal:
 
 ```bash
 cd frontend
 npm install
-```
-
-**Start the Vite development server**:
-```bash
 npm run dev
 ```
 
-## Architecture
+## Scripts
 
-### Directory structure
-
-```
-├── backend/                  # Express 5 backend application
-│   ├── prisma/               # Prisma schema and SQLite database
-│   │   ├── dev.db            # SQLite database file (auto-generated)
-│   │   └── schema.prisma     # Data model definitions
-│   ├── src/                  # Backend source code
-│   │   ├── controllers/      # Business logic controllers (Admin, API, etc.)
-│   │   ├── middleware/       # JWT auth and rate limiting
-│   │   ├── utils/            # Utilities (asyncHandler, password hashing)
-│   │   └── index.ts          # Express application entry point
-│   ├── uploads/              # Uploaded audio files
-│   └── package.json
-└── frontend/                 # Vite + React frontend application
-    ├── src/                  # Frontend source code
-    │   ├── components/       # Common UI and chart components
-    │   ├── locales/          # i18next localization files
-    │   ├── pages/            # Router pages (Admin, Subject evaluation views)
-    │   ├── utils/            # API requests and helper functions
-    │   ├── App.tsx           # Root router
-    │   └── main.tsx          # React mount point
-    └── package.json
-```
-
-### Request lifecycle
-
-1. A subject opens the evaluation link `http://localhost:5173/`.
-2. The frontend uses `fetch` to call the Express API at `http://localhost:3000/api/...`.
-3. The backend route (wrapped by `asyncHandler`) receives the request.
-4. Prisma Client queries the `dev.db` database for audio questions and scales.
-5. The frontend `MetricRenderer` builds the scale UI.
-6. The user submits answers, the frontend sends a POST request, and Prisma saves the `Response`.
-
-### Key components
-
-**Unified async error handling (`backend/src/utils/asyncHandler.ts`)**
-- All Express routes are wrapped in `asyncHandler`. This removes `try/catch` boilerplate and catches asynchronous errors cleanly.
-
-**Scale rendering system (`frontend/src/pages/Subject.tsx`)**
-- The main component for audio evaluation. The `MetricRenderer` parses the `ScaleMetric` structure from the database to build UIs for semantic differential or basic scoring.
-
-**Local file storage (`backend/src/index.ts` / multer)**
-- Audio files uploaded by admins go into `backend/uploads/`. Static routing serves them to the frontend, using `path.basename` to prevent directory traversal attacks.
-
-### Database schema
-
-```
-Admin
-├── id (Int, PK)
-├── username (String, Unique)
-└── password (String, Hashed)
-
-Question
-├── id (Int, PK)
-├── type (String)              # Evaluation type (e.g., AUDIO_AB)
-├── audioUrlA / B / C (String) # Audio links
-├── metricGroup (String)       # Bound scale group
-└── ...
-
-ScaleMetric
-├── id (Int, PK)
-├── group (String)             # Scale group name
-├── type (String)              # basic | semantic_diff
-├── points (Int)               # Scoring scale (e.g., 7-point scale)
-└── leftLabel / rightLabel     # Semantic anchors (e.g., Warm - Cold)
-
-Response
-├── id (Int, PK)
-├── sessionId (String)         # Session tracking
-├── questionId (Int, FK)       # Associated question
-├── choice (String)            # Serialized JSON response
-└── createdAt (DateTime)
-```
-
-## Available scripts
-
-### Backend (`/backend`)
+Root:
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start the development server with hot-reload via `tsx watch` |
-| `npm start` | Start the service in production mode |
-| `npx prisma studio` | Open the browser-based database UI |
+| `npm run install:all` | Install backend and frontend dependencies |
+| `npm run dev` | Start backend and frontend together (concurrently) |
 
-### Frontend (`/frontend`)
+Backend (`backend/`):
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start the Vite development server |
-| `npm run build` | Check TypeScript (`tsc -b`) and build static files |
+| `npm run dev` | Start the server with `tsx watch` (reloads on change) |
+| `npm start` | Start the server with `tsx` (no watch) |
+| `npm test` | Run the tests in `test/` |
+| `npx prisma db seed` | Create the default admin account |
+| `npx prisma studio` | Browse the database in the browser |
+
+Frontend (`frontend/`):
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Type-check (`tsc -b`) and build to `dist/` |
 | `npm run lint` | Run ESLint |
 | `npm run preview` | Preview the production build |
 
 ## Deployment
 
-### Frontend deployment
+The frontend calls the API with relative paths (`/api/...`, `/uploads/...`), so it must be served from the same origin as the backend.
 
-1. Build the app in the `frontend` directory:
-   ```bash
-   npm run build
-   ```
-2. Upload the `dist/` folder to a static host (Vercel, Netlify) or an Nginx server.
-3. **Note**: Make sure your frontend API requests point to the production backend URL (you can set this in Vite's `.env.production`).
+### Docker Compose
 
-### Backend deployment
+```bash
+docker compose up -d --build
+```
 
-**VPS deployment (PM2)**:
-1. Copy the code to your server.
-2. Run `npm install`.
-3. Sync the database: `npx prisma db push`.
-4. Start the app with PM2:
+The app is then available on port 80. Nginx in the frontend container serves the built files and proxies `/api` and `/uploads` to the backend container. On startup, the backend runs `prisma db push` and creates the default admin account.
+
+Data is kept in two mounted directories:
+
+- `./backend/prisma`: the SQLite database (`quaeligo.db`)
+- `./uploads`: uploaded audio files
+
+Before deploying, replace the `JWT_SECRET` in `docker-compose.yml`. After your first login, change the default `admin / admin123` password.
+
+### Without Docker (PM2)
+
+1. Build the frontend: `cd frontend && npm install && npm run build`.
+2. Set up the backend: `cd backend && npm install && npx prisma db push && npx prisma db seed`.
+3. Start the backend with PM2:
    ```bash
    npm install -g pm2
-   pm2 start "npm start" --name "audiosurvey-backend"
+   cd backend
+   pm2 start "npm start" --name quaeligo-backend
    ```
 
-**Docker notes**:
-Because this project relies on SQLite and local file storage, if you deploy with Docker:
-1. You need to mount volumes for `backend/prisma/dev.db` and `backend/uploads/`.
-2. Expose the backend port and set up a reverse proxy (like Nginx).
+The backend serves `frontend/dist` directly, so the whole app runs on one port (`3000` by default). You can put Nginx or another reverse proxy in front of it.
 
 ## Troubleshooting
 
-### JWT login failure
-**Error**: Admin cannot log in, receiving Unauthorized.
-**Solution**: Check if `JWT_SECRET` is set in `backend/.env`. If not, copy it from `.env.example` and restart the backend.
+### Admin login fails with Unauthorized
 
-### Frontend audio file not found
-**Error**: Audio cannot play in the Subject interface (404 Not Found).
-**Solution**: Make sure the audio files are actually inside `backend/uploads/`. The backend's `express.static` route must map correctly to `/uploads`.
+Check that `JWT_SECRET` is set in `backend/.env`, then restart the backend. If you haven't created the admin account yet, run `npx prisma db seed`.
 
-### Prisma error
-**Error**: `The table main.Question does not exist in the current database.`
-**Solution**: The database schema isn't synced. Run this in the `backend` directory:
+### Audio returns 404 on the subject page
+
+Uploaded files are stored in `uploads/` at the project root, not in `backend/`. Make sure the files are there. During development, also check that the Vite dev server is running, since it proxies `/uploads`.
+
+### `The table main.Question does not exist in the current database.`
+
+The database schema hasn't been created. Run this in `backend/`:
+
 ```bash
 npx prisma db push
 ```
 
-## How to Add a New Language
+## Adding a language
 
-The system supports automatic language loading and dynamic database string parsing. To add a new language (e.g., Korean `ko`):
+The example below adds Korean (`ko`).
 
-1. **Create Language Dictionary**:
-   Copy `frontend/src/locales/en.ts` to `frontend/src/locales/ko.ts` and translate the values. Vite will automatically load it.
+1. Copy `frontend/src/locales/en.ts` to `frontend/src/locales/ko.ts` and translate the values. `frontend/src/i18n.ts` picks up every file in `locales/` automatically.
 
-2. **Add UI Button**:
-   In `frontend/src/App.tsx`, add a language switcher button:
+2. Add a switcher button in `frontend/src/App.tsx`:
    ```tsx
    <button className="pixel-btn secondary" onClick={() => { changeLanguage('ko'); setMobileMenuOpen(false); }}>한국어</button>
    ```
 
-3. **Update Database Text Parser**:
-   In `frontend/src/utils/i18nUtils.ts`, add the language code and set its index (e.g., index 3 for the 4th language):
+3. Text stored in the database (question titles, scale labels, and so on) uses `|` to separate languages. Add the new language's position in `frontend/src/utils/i18nUtils.ts`:
    ```typescript
    if (lang.startsWith('ko')) return parts[3] || parts[0];
    ```
-   *Then, when writing database texts in the admin panel, format them as: `中文|English|日本語|한국어`.*
+   Then enter text in the admin panel as `中文|English|日本語|한국어`.
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+GNU General Public License v3.0. See [LICENSE](LICENSE).

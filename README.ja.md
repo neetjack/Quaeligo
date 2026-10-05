@@ -2,273 +2,188 @@
 
 [English](README.md) | [中文](README.zh-CN.md) | [日本語](README.ja.md)
 
-Quaeligo（ラテン語の *Quaero* [探求・問う] ＋ *Colligo* [収集・評価] に由来）は、音声主観評価および聴取実験のためのモダンなオープンソースWebシステムです。ノイズキャンセリング、音声強調、空間オーディオ、音質向上アルゴリズムの主観テストやブラインドテスト向けに設計されており、設问のカスタマイズ、多次元スライダースコア指標、ワンクリックでのデータエクスポートに対応しています。
+Quaeligo は、主観的な聴取実験を行うためのオープンソースの Web アプリです。音声強調、ノイズ抑制、空間音響などの音声アルゴリズムをブラインドで評価できます。アンケートと評価尺度は自由に設定でき、実験後は回答データをエクスポートできます。
 
-## 主な機能
+名前はラテン語の *quaero*（探求する）と *colligo*（集める）に由来します。
 
-- **多次元的な音声テスト**: ブラインドテスト（A/Bテスト）や音質評価（MOS/MUSHRA）などの評価方式に対応。
-- **カスタム評価UI**: 設問ごとに異なるタイプ（セマンティックディファレンシャル、基本スコアリングなど）のスライダーを設定可能。
-- **多言語対応 (i18n)**: フロントエンドは多言語切り替え機能を内蔵。
-- **管理画面**: 設問の作成、音声ファイルのアップロード、評価スケールの設定、回答データのエクスポートが可能。
+## 機能
+
+- A/B ブラインド聴取テストと音質評価（MOS、MUSHRA）
+- 設問ごとの評価尺度（基本スコア、SD 法スライダー）
+- 複数アンケートの管理（設問・尺度・回答はアンケートごとに独立）
+- 管理画面：設問の作成、音声のアップロード、尺度の編集、回答のエクスポート
+- 日本語・英語・中国語の UI（i18next）
 
 ## 技術スタック
 
-- **言語**: TypeScript (フルスタック)
-- **フロントエンド**: React 19, Vite, React Router, i18next
-- **バックエンド**: Express 5, Node.js (tsx)
-- **データベース**: SQLite, Prisma ORM
-- **ファイル保存**: ローカルファイルシステム (multerを使用)
-- **認証・セキュリティ**: JWT (JSON Web Tokens), bcryptjs, express-rate-limit
+- フロントエンド・バックエンドとも TypeScript
+- フロントエンド：React 19、Vite、React Router、i18next
+- バックエンド：Express 5（Node.js、tsx で実行）
+- データベース：SQLite + Prisma ORM
+- ファイルアップロード：multer（ローカルディスクに保存）
+- 認証：JWT、bcryptjs、express-rate-limit
 
 ## 動作環境
 
-- **Node.js**: 20以上
-- **npm** (推奨) または yarn
-- *注: SQLiteを使用しているため、外部データベースを用意しなくてもローカルで直接動かせます。*
+- Node.js 20 以上
+- npm
 
-## 使い方
+SQLite はファイルベースなので、別途データベースサーバーは不要です。
 
-### ⚡ クイックスタート
+## クイックスタート
 
-ルートディレクトリにあるスクリプトを使えば、個別のフォルダに入ることなく、**プロジェクトのルート**から一括でセットアップできます：
+プロジェクトのルートで実行します。
 
 ```bash
-# 1. リポジトリのクローン
 git clone <your-repository-url>
 cd quaeligo
 
-# 2. フロントエンドとバックエンドの依存関係を一括インストール
+# ルート・バックエンド・フロントエンドの依存関係をインストール
+npm install
 npm run install:all
 
-# 3. 環境変数とデータベースの初期化 (初回のみ)
+# 初回のみ：.env、データベース、初期管理者を作成
 cd backend
 cp .env.example .env
 npx prisma db push
-npm run prisma:seed   # デフォルト管理者 (admin / admin123) の初期作成
+npx prisma db seed   # admin / admin123 を作成
 cd ..
 
-# 4. フロントエンドとバックエンドの開発サーバーを同時に起動
+# バックエンドとフロントエンドを同時に起動
 npm run dev
 ```
-バックエンドAPIは `http://localhost:3000`、フロントエンド画面は `http://localhost:5173` で起動します。
 
----
+バックエンドは `http://localhost:3000` で待ち受けます。ブラウザで `http://localhost:5173` を開いてください。Vite の開発サーバーが `/api` と `/uploads` をバックエンドに転送します。
 
-### ステップごとの手動セットアップ
+## 手動セットアップ
 
-#### バックエンド
+### バックエンド
 
 ```bash
 cd backend
 npm install
-```
-
-**環境変数の設定**:
-サンプルファイルをコピーします：
-```bash
 cp .env.example .env
-```
-必要に応じて `.env` を修正します（ローカル開発ならデフォルトのポートと `JWT_SECRET` で十分です）：
-
-| 変数 | 説明 | 例 |
-|---|---|---|
-| `PORT` | サーバーのポート | `3000` |
-| `JWT_SECRET` | JWTの暗号化キー | `your_jwt_secret_key_here` |
-| `DATABASE_URL` | SQLiteデータベース接続文字列 | `file:./audiosurvey.db?connection_limit=1&busy_timeout=5000` |
-| `CORS_ORIGIN` | 許可するクロスオリジンドメイン（カンマ区切り） | `http://localhost:5173,https://survey.example.com` |
-
-> **CORS設定ガイド (`CORS_ORIGIN`)**:
-> - **ローカル開発**: 未設定時は `http://localhost:5173,http://localhost:3000` がデフォルトで許可されます。
-> - **本番デプロイ**: 公開ドメインをカンマ区切りで指定します（例: `https://survey.yourdomain.com`）。
-> - **Nginxリバースプロキシ構成**: `docker-compose.yml` を使用する場合、フロントエンドとAPIは同一のNginxポートを共有するため、ブラウザからは同一オリジンとして通信され安全です。
-
-**データベースの初期化**:
-```bash
-# Prismaスキーマの同期
 npx prisma db push
-```
-
-**サーバーの起動**:
-```bash
+npx prisma db seed
 npm run dev
 ```
 
-#### フロントエンド
+ローカル開発では `.env.example` の値をそのまま使えます。
 
-別のターミナルを開きます：
+| 変数 | 説明 | `.env.example` の値 |
+|---|---|---|
+| `PORT` | バックエンドのポート | `3000` |
+| `JWT_SECRET` | 管理者ログイン用トークンの署名鍵 | `your_jwt_secret_here` |
+| `DATABASE_URL` | SQLite の接続文字列（`backend/prisma/` からの相対パス） | `file:./quaeligo.db?connection_limit=1&busy_timeout=5000` |
+| `CORS_ORIGIN` | 許可するオリジン（カンマ区切り） | `http://localhost:5173,http://localhost:3000` |
+
+開発時に `CORS_ORIGIN` を設定しない場合、`http://localhost:5173` と `http://localhost:3000` が許可されます。Docker Compose では Nginx がフロントエンドとバックエンドを同一オリジンで配信するため、通常は設定不要です。
+
+### フロントエンド
+
+別のターミナルで実行します。
 
 ```bash
 cd frontend
 npm install
-```
-
-**Viteサーバーの起動**:
-```bash
 npm run dev
 ```
 
-## アーキテクチャ
+## スクリプト
 
-### ディレクトリ構成
-
-```
-├── backend/                  # Express 5 バックエンド
-│   ├── prisma/               # PrismaスキーマとSQLiteデータベース
-│   │   ├── dev.db            # SQLiteデータベースファイル
-│   │   └── schema.prisma     # データモデル定義
-│   ├── src/                  # バックエンドのソース
-│   │   ├── controllers/      # コントローラーロジック
-│   │   ├── middleware/       # JWT認証・レート制限
-│   │   ├── utils/            # ユーティリティ (asyncHandlerなど)
-│   │   └── index.ts          # Expressエントリーポイント
-│   ├── uploads/              # アップロードされた音声ファイル
-│   └── package.json
-└── frontend/                 # Vite + React フロントエンド
-    ├── src/                  # フロントエンドのソース
-    │   ├── components/       # 共通UIとチャートコンポーネント
-    │   ├── locales/          # i18next 翻訳ファイル
-    │   ├── pages/            # ルーターページ
-    │   ├── utils/            # APIリクエストなどのツール
-    │   ├── App.tsx           # ルートルーター
-    │   └── main.tsx          # Reactマウントポイント
-    └── package.json
-```
-
-### リクエストの流れ
-
-1. 被験者がフロントエンドのリンク `http://localhost:5173/` にアクセスする。
-2. フロントエンドから `fetch` でバックエンドAPI `http://localhost:3000/api/...` を叩く。
-3. バックエンドのルート（`asyncHandler` でエラー処理を統合）がリクエストを受け取る。
-4. Prisma Client が SQLite (`dev.db`) から音声データとスケール設定を取得する。
-5. フロントエンドの `MetricRenderer` が設定に応じた評価UIを描画する。
-6. ユーザーが回答を送信し、Prismaが `Response` テーブルに保存する。
-
-### コア設計
-
-**エラー処理の統合 (`backend/src/utils/asyncHandler.ts`)**
-- すべてのExpressルートを `asyncHandler` でラップしています。これにより、`try/catch` を各所に書く必要がなくなり、エラーを一括で処理できます。
-
-**評価UIの描画 (`frontend/src/pages/Subject.tsx`)**
-- `MetricRenderer` がデータベースの `ScaleMetric` 設定を解析し、セマンティックディファレンシャルや通常のスライダーUIを動的に構築します。
-
-**ローカル保存 (`backend/src/index.ts` / multer)**
-- 管理者がアップロードした音声ファイルは `backend/uploads/` に保存され、静的ルーティングで配信されます。ディレクトリトラバーサルを防ぐため `path.basename` をかませています。
-
-### データベーススキーマ
-
-```
-Admin
-├── id (Int, PK)
-├── username (String, Unique)
-└── password (String, Hashed)
-
-Question (設問)
-├── id (Int, PK)
-├── type (String)              # 評価タイプ (例: AUDIO_AB)
-├── audioUrlA / B / C (String) # 音声ファイルのリンク
-├── metricGroup (String)       # 紐づくスケールグループ
-└── ...
-
-ScaleMetric (評価スケール)
-├── id (Int, PK)
-├── group (String)             # グループ名
-├── type (String)              # basic | semantic_diff
-├── points (Int)               # 段階数 (例: 7段階)
-└── leftLabel / rightLabel     # 左右のラベル (例: Warm - Cold)
-
-Response (回答)
-├── id (Int, PK)
-├── sessionId (String)         # セッションID
-├── questionId (Int, FK)       # 紐づく設問
-├── choice (String)            # JSON形式の回答データ
-└── createdAt (DateTime)
-```
-
-## スクリプト一覧
-
-### バックエンド (`/backend`)
+ルート：
 
 | コマンド | 説明 |
 |---|---|
-| `npm run dev` | ホットリロード対応の開発サーバーを起動 (`tsx watch`) |
-| `npm start` | 本番モードでサーバーを起動 |
-| `npx prisma studio` | ブラウザ版のSQLite管理画面を開く |
+| `npm run install:all` | バックエンドとフロントエンドの依存関係をインストール |
+| `npm run dev` | バックエンドとフロントエンドを同時に起動（concurrently） |
 
-### フロントエンド (`/frontend`)
+バックエンド（`backend/`）：
 
 | コマンド | 説明 |
 |---|---|
-| `npm run dev` | Viteサーバーを起動 |
-| `npm run build` | TypeScriptのチェック (`tsc -b`) とビルドを実行 |
-| `npm run lint` | ESLintを実行 |
-| `npm run preview` | `dist` ディレクトリの本番ビルドをプレビュー |
+| `npm run dev` | `tsx watch` で起動（変更時に自動再起動） |
+| `npm start` | `tsx` で起動（ファイル監視なし） |
+| `npm test` | `test/` のテストを実行 |
+| `npx prisma db seed` | 初期管理者アカウントを作成 |
+| `npx prisma studio` | ブラウザでデータベースを閲覧 |
+
+フロントエンド（`frontend/`）：
+
+| コマンド | 説明 |
+|---|---|
+| `npm run dev` | Vite 開発サーバーを起動 |
+| `npm run build` | 型チェック（`tsc -b`）後、`dist/` にビルド |
+| `npm run lint` | ESLint を実行 |
+| `npm run preview` | ビルド結果をプレビュー |
 
 ## デプロイ
 
-### フロントエンド (Vercel / Netlify / Nginx)
+フロントエンドは相対パス（`/api/...`、`/uploads/...`）で API を呼び出すため、バックエンドと同一オリジンで配信する必要があります。
 
-1. `frontend` フォルダでビルドします：
-   ```bash
-   npm run build
-   ```
-2. 生成された `dist/` フォルダをホスティングサービス（Vercel, Netlify）や Nginx 環境に配置します。
-3. **注意**: ビルド前に、フロントエンドからのAPIリクエスト先が本番のバックエンドURLになるように設定してください（例: Viteの `.env.production` を使う）。
+### Docker Compose
 
-### バックエンド (VPS / Docker)
+```bash
+docker compose up -d --build
+```
 
-**VPS の場合 (PM2 を推奨)**:
-1. サーバーにコードを配置します。
-2. `npm install` で依存関係をインストールします。
-3. `npx prisma db push` でデータベースを同期します。
-4. PM2で起動します：
+起動後はポート 80 でアクセスできます。フロントエンドコンテナの Nginx がビルド済みファイルを配信し、`/api` と `/uploads` をバックエンドコンテナに転送します。バックエンドは起動時に `prisma db push` を実行し、初期管理者を作成します。
+
+データは次の 2 つのマウントディレクトリに保存されます。
+
+- `./backend/prisma`：SQLite データベース（`quaeligo.db`）
+- `./uploads`：アップロードされた音声ファイル
+
+デプロイ前に `docker-compose.yml` の `JWT_SECRET` を変更してください。初回ログイン後は、初期パスワード `admin / admin123` を変更してください。
+
+### Docker を使わない場合（PM2）
+
+1. フロントエンドをビルド：`cd frontend && npm install && npm run build`
+2. バックエンドを準備：`cd backend && npm install && npx prisma db push && npx prisma db seed`
+3. PM2 でバックエンドを起動：
    ```bash
    npm install -g pm2
-   pm2 start "npm start" --name "audiosurvey-backend"
+   cd backend
+   pm2 start "npm start" --name quaeligo-backend
    ```
 
-**Docker の場合**:
-SQLite とローカルファイル保存を使っているため、Docker で動かす場合は以下の点に注意してください。
-1. **データボリュームのマウント**：コンテナ再起動でデータが消えないよう、`backend/prisma/dev.db` と `backend/uploads/` をマウントしてください。
-2. バックエンドのポートを公開し、Nginx等でリバースプロキシを設定します。
+バックエンドが `frontend/dist` をそのまま配信するので、アプリ全体が 1 つのポート（既定は `3000`）で動きます。必要に応じて Nginx などのリバースプロキシを前段に置いてください。
 
 ## トラブルシューティング
 
-### ログインできない
-**エラー**: 管理者画面で Unauthorized になる。
-**解決策**: `backend/.env` に `JWT_SECRET` があるか確認してください。なければ `.env.example` からコピーしてバックエンドを再起動します。
+### 管理者ログインで Unauthorized になる
 
-### 音声が再生されない
-**エラー**: 評価画面で音声ファイルが 404 Not Found になる。
-**解決策**: `backend/uploads/` フォルダに該当のファイルが存在するか確認してください。また、バックエンドの `express.static` が正しく `/uploads` にルーティングされているか確認します。
+`backend/.env` に `JWT_SECRET` が設定されているか確認し、バックエンドを再起動してください。管理者アカウントを未作成の場合は `npx prisma db seed` を実行してください。
 
-### Prisma のエラー
-**エラー**: `The table main.Question does not exist in the current database.`
-**解決策**: データベースのテーブルが作成されていません。`backend` フォルダで以下を実行してください：
+### 回答画面で音声が 404 になる
+
+アップロードしたファイルは `backend/` ではなく、プロジェクトルートの `uploads/` に保存されます。ファイルがそこにあるか確認してください。開発時は Vite が `/uploads` を転送するので、Vite の開発サーバーが起動しているかも確認してください。
+
+### `The table main.Question does not exist in the current database.`
+
+データベースのテーブルが作成されていません。`backend/` で次を実行してください。
+
 ```bash
 npx prisma db push
 ```
 
-## 新しい言語の追加方法
+## 言語の追加
 
-システムは言語パックの自動読み込みと、データベーステキストの動的解析をサポートしています。新しい言語（例：韓国語 `ko`）を追加するには、以下の3つのステップを実行します。
+韓国語（`ko`）を追加する例です。
 
-1. **言語辞書の作成**:
-   `frontend/src/locales/en.ts` をコピーして `frontend/src/locales/ko.ts` を作成し、値を翻訳します。Vite によって自動的に読み込まれます。
+1. `frontend/src/locales/en.ts` を `frontend/src/locales/ko.ts` にコピーし、値を翻訳します。`frontend/src/i18n.ts` が `locales/` 内のファイルを自動で読み込みます。
 
-2. **UIボタンの追加**:
-   `frontend/src/App.tsx` の言語切り替えメニューにボタンを追加します。
+2. `frontend/src/App.tsx` に切り替えボタンを追加します。
    ```tsx
    <button className="pixel-btn secondary" onClick={() => { changeLanguage('ko'); setMobileMenuOpen(false); }}>한국어</button>
    ```
 
-3. **データベーステキスト解析の更新**:
-   `frontend/src/utils/i18nUtils.ts` に、新しい言語のインデックス（例：4番目の言語ならインデックス3）を追加します。
+3. データベース内のテキスト（設問タイトル、尺度ラベルなど）は `|` で言語を区切っています。`frontend/src/utils/i18nUtils.ts` に新しい言語の位置を追加します。
    ```typescript
    if (lang.startsWith('ko')) return parts[3] || parts[0];
    ```
-   *その後、管理画面で多言語テキストを入力する際は、`中文|English|日本語|한국어` のフォーマットを使用します。*
+   以降、管理画面では `中文|English|日本語|한국어` の形式で入力します。
 
 ## ライセンス
 
-本プロジェクトは GNU General Public License v3.0 に基づいて公開されています。詳細は [LICENSE](LICENSE) ファイルをご確認ください。
-
+GNU General Public License v3.0。詳しくは [LICENSE](LICENSE) をご覧ください。
