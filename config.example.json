@@ -1,0 +1,76 @@
+{
+  "slug": "comprehensive-survey-example",
+  "title": "完整功能演示问卷",
+  "description": "这是一个展示了所有可用题型和指标配置方式的参考示例。请复制并在您的实际配置中修改字段。",
+  "status": "PUBLIC",
+  "metrics": [
+    {
+      "group": "A",
+      "order": 1,
+      "type": "basic",
+      "title": "总体评分 (Basic Scale)",
+      "points": 5,
+      "leftLabel": "非常差",
+      "centerLabel": "一般",
+      "rightLabel": "非常好"
+    },
+    {
+      "group": "A",
+      "order": 2,
+      "type": "semantic_diff",
+      "title": "语义差异评分 (Semantic Differential)",
+      "points": 7,
+      "payload": [
+        { "left": "沉闷", "right": "明亮" },
+        { "left": "浑浊", "right": "清晰" },
+        { "left": "冰冷", "right": "温暖" }
+      ]
+    },
+    {
+      "group": "B",
+      "order": 1,
+      "type": "basic",
+      "title": "单项选择或特定评分 (Group B)",
+      "points": 10,
+      "leftLabel": "0 (最低)",
+      "rightLabel": "10 (最高)"
+    }
+  ],
+  "questions": [
+    {
+      "type": "AUDIO_AB",
+      "metricGroup": "A",
+      "title": "Q1: 基础双音频对比测试 (AB Test)",
+      "content": "请仔细聆听以下两段音频，并对其整体质量和听感进行评分。",
+      "audioA": "sample1_codec_a.wav",
+      "audioB": "sample1_codec_b.wav",
+      "order": 1,
+      "isRandomized": true,
+      "exportName": "Test_Item_1"
+    },
+    {
+      "type": "AUDIO_MUSHRA",
+      "metricGroup": "A",
+      "title": "Q2: 五音频对比测试 (MUSHRA / ABCDE Test)",
+      "content": "请评价这五段音频的音质差异。",
+      "audioA": "sample2_codec_a.wav",
+      "audioB": "sample2_codec_b.wav",
+      "audioC": "sample2_reference.wav",
+      "audioD": "sample2_codec_d.wav",
+      "audioE": "sample2_codec_e.wav",
+      "order": 2,
+      "isRandomized": true,
+      "exportName": "Test_Item_2"
+    },
+    {
+      "type": "AUDIO_A",
+      "metricGroup": "B",
+      "title": "Q3: 单一音频评估 (Single Stimulus)",
+      "content": "请给这段声音的清晰度打分。",
+      "audioA": "sample3_noise_reduced.wav",
+      "order": 3,
+      "isRandomized": false,
+      "exportName": "Test_Item_3"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quaeligo_backend
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=super_secret_jwt_key_change_me
+      - DATABASE_URL=file:./quaeligo.db?connection_limit=1&busy_timeout=5000
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
+    volumes:
+      - ./backend/prisma:/app/prisma
+      - ./uploads:/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: quaeligo_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+

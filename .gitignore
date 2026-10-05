@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
+dist/
+build/
+
+# Uploads / Data
+uploads/
+/assets/
+*.db
+*.db-*
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.bak*
+*.bak
+
+# Reports & Logs
+*output*.txt
+*report*.json
+recovered.txt
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo

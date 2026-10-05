@@ -1,0 +1,81 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  password String
+}
+
+model Survey {
+  id          Int           @id @default(autoincrement())
+  slug        String        @unique
+  title       String
+  description String?       @default("")
+    welcomeText String?       @default("")
+  status      String        @default("DRAFT") // DRAFT, PUBLIC, CLOSED
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  questions   Question[]
+  metrics     ScaleMetric[]
+  responses   Response[]
+}
+
+model Question {
+  id            Int        @id @default(autoincrement())
+  type          String     @default("AUDIO_AB")
+  metricGroup   String     @default("A")
+  title         String
+  audioUrlA     String     @default("")
+  audioUrlB     String     @default("")
+  audioUrlC     String     @default("")
+  audioUrlD     String     @default("")
+  audioUrlE     String     @default("")
+  content       String     @default("")
+  options       String     @default("")
+  order         Int        @default(0)
+  isRandomized  Boolean    @default(true)
+  exportName    String?    @default("")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  responses     Response[]
+
+  surveyId      Int        @default(1)
+  survey        Survey     @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+}
+
+model Response {
+  id         Int      @id @default(autoincrement())
+  sessionId  String
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  choice     String   // Will store JSON string of scale responses
+  createdAt  DateTime @default(now())
+
+  surveyId   Int      @default(1)
+  survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+}
+
+model ScaleMetric {
+  id          Int      @id @default(autoincrement())
+  group       String   @default("A")
+  order       Int      @default(0)
+  type        String   // "basic" or "semantic_diff"
+  title       String?  // e.g. "Similarity"
+  leftLabel   String?  // e.g. "Warm"
+  centerLabel String?  // e.g. "Neutral"
+  rightLabel  String?  // e.g. "Cold"
+  payload     String?  // Stores JSON array for semantic_pair and mushra_group
+  points      Int      @default(7)
+
+  surveyId    Int      @default(1)
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+}
